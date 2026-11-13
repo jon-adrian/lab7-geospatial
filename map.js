@@ -141,6 +141,11 @@ const radiusScale = d3
 .domain([0, d3.max(stations, (d) => d.totalTraffic)])
 .range([0, 25]);
 
+let stationFlow = d3.scaleQuantize()
+  .domain([0, 1])
+  .range([0, 0.5, 1]);
+
+
 const circles = svg
 .selectAll('circle')
 .data(stations, (d) => d.short_name)
@@ -157,7 +162,15 @@ const circles = svg
     .text(
       `${d.totalTraffic} trips (${d.departures} departures, ${d.arrivals} arrivals)`
     );
-});
+})
+.each(function (d) {
+    d3.select(this)
+      .append('title')
+      .text(
+        `${d.totalTraffic} trips (${d.departures} departures, ${d.arrivals} arrivals)`
+      );
+  });
+
 
 
 function updatePositions() {
@@ -209,7 +222,14 @@ function updateScatterPlot(timeFilter) {
     // Update the existing circles
     circles
       .data(filteredStations, (d) => d.short_name)
-      .attr('r', (d) => radiusScale(d.totalTraffic));
+
+      .attr('r', (d) => radiusScale(d.totalTraffic))
+      .style('--departure-ratio', (d) =>
+        d.totalTraffic > 0
+          ? stationFlow(d.departures / d.totalTraffic)
+          : 0.5
+      );
+      
   
     // Update tooltip values
     circles.select('title')
